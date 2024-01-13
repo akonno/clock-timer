@@ -10,7 +10,7 @@
     /* border: 1cqw solid #00818a;
     border-radius: 50%;
     */
-    background-image: url('/clock-face.png');
+    background-image: url('./clock-face.png');
     background-position: center;
     background-size: contain;
     margin: 0 auto;
