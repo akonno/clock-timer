@@ -1,0 +1,98 @@
+/* CSS for analog clock
+ * original: https://youtu.be/cx0TU2ZMAdU?si=KoXGb1i3KwttAT0J
+ * modified to use percentage
+ */
+/* cqw: container query width == 1% of parent container */
+.clock-dial {
+    width: auto;
+    height: 80%;
+    aspect-ratio: 1;
+    /* border: 1cqw solid #00818a;
+    border-radius: 50%;
+    */
+    background-image: url('/clock-face.png');
+    background-position: center;
+    background-size: contain;
+    margin: 0 auto;
+    position: relative;
+    font-family: 'Lato', Arial, Helvetica, sans-serif;
+}
+
+.point {
+    width: 4%;
+    height: 4%;
+    background-color: #283149;
+    border-radius: 50%;
+    position: absolute;
+    top: 48%;
+    left: 48%;
+}
+
+.brand {
+    font-size: large;
+    font-weight: bold;
+    color: #00818a;
+    position: absolute;
+    top: 25%;
+    left: 50%;
+    margin-right: -50%;
+    transform:translate(-50%, -50%);
+}
+
+.minute-hand-wrapper {
+    width: 80%;
+    height: 80%;
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    border-radius: 50%;
+}
+
+.minute-hand .hand {
+    width: 2%;
+    height: 50%;
+    background-color: #404b69;
+    position: absolute;
+    left: 49%;
+}
+
+.hour-hand-wrapper {
+    width: 68%;
+    height: 68%;
+    position: absolute;
+    top: 16%;
+    left: 16%;
+    border-radius: 50%;
+}
+
+.hour-hand .hand {
+    width: 3.2%;
+    height: 50%;
+    background-color: #404b69;
+    position: absolute;
+    left: 48.4%;
+}
+
+.second-hand-wrapper {
+    width: 70%;
+    height: 70%;
+    position: absolute;
+    top: 15%;
+    left: 15%;
+    border-radius: 50%;
+}
+
+.second-hand .hand {
+    width: 1.2%;
+    height: 50%;
+    background-color: #404b69;
+    position: absolute;
+    left: 49.4%;
+}
+
+/* for timer face */
+.timer-face {
+    font-size: 14cqw;
+    font-weight: bold;
+    color: #283149;
+}
