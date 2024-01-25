@@ -132,6 +132,11 @@ const app = createApp({
         } else {
             return true;
         }
+      },
+      beep()
+      {
+        // Chime sound: MaouDamashii https://maou.audio/
+        new Audio("maou_se_jingle03.mp3").play();
       }
     }
   }).mount("#app");
