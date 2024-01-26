@@ -33,6 +33,15 @@ setInterval(
 
 // Timer (Vue)
 
+const chimeSound = new Audio("maou_se_jingle03.mp3");
+// In some browsers, Audio objects do not load the sound file
+// immediately upon creation but load it only when playback is
+// requested. Therefore, if you are offline when a timer ends,
+// the end sound might not play.
+// However, if you test the sound ("Test Sound") while online,
+// the sound file will be loaded, ensuring the end sound can
+// still play even if you go offline afterwards.
+
 // setup Vue app
 const app = createApp({
     data() {
@@ -43,7 +52,7 @@ const app = createApp({
         minStr: '10',
         secVal: 0,
         secStr: '0',
-        timerStr: '10:00',
+        timerStr: "10'00''",
         started: false,
         finished: false,
         locked: false
@@ -111,7 +120,7 @@ const app = createApp({
                         this.finished = true;
                         this.locked = false;
                         // Chime sound: MaouDamashii https://maou.audio/
-                        new Audio("maou_se_jingle03.mp3").play();
+                        chimeSound.play();
                     }
                 }
                 this.formatTimer();
@@ -120,23 +129,25 @@ const app = createApp({
       },
       formatTimer()
       {
-        this.timerStr = this.minVal.toString().padStart(2, '0') + ':' + this.secVal.toString().padStart(2, '0');
+        this.timerStr = this.minVal.toString().padStart(2, '0') + "'" + this.secVal.toString().padStart(2, '0') + "''";
       },
       isNumber(evt)
       {
         // https://stackoverflow.com/questions/39782176/filter-input-text-only-accept-number-and-dot-vue-js
-        evt = (evt) ? evt : window.event;
+        // evt = (evt) ? evt : window.event;
         var charCode = (evt.which) ? evt.which : evt.keyCode;
-        if ((charCode > 31 && (charCode < 48 || charCode > 57)) && charCode !== 46) {
-            evt.preventDefault();;
+        if (48 <= charCode && charCode <= 57) {
+          // '0' - '9'
+          return true;
         } else {
-            return true;
+          evt.preventDefault();;
+          return false;
         }
       },
       beep()
       {
         // Chime sound: MaouDamashii https://maou.audio/
-        new Audio("maou_se_jingle03.mp3").play();
+        chimeSound.play();
       }
     }
   }).mount("#app");
