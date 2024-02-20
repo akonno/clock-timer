@@ -42,6 +42,22 @@ const chimeSound = new Audio("maou_se_jingle03.mp3");
 // the sound file will be loaded, ensuring the end sound can
 // still play even if you go offline afterwards.
 
+const noSleep = new NoSleep();
+noSleep.disable();
+
+function disableLockScreen() {
+  // Enable wake lock.
+  // (must be wrapped in a user input event handler e.g. a mouse or touch handler)
+  document.addEventListener('click', function enableNoSleep() {
+    document.removeEventListener('click', enableNoSleep, false);
+    noSleep.enable();
+  }, false);
+}
+
+function enableLockScreen() {
+  noSleep.disable();
+}
+
 // setup Vue app
 const app = createApp({
     data() {
@@ -64,6 +80,7 @@ const app = createApp({
         if (this.minVal !== 0 || this.secVal !== 0) {
             this.playMode = true;
             this.started = true;
+            disableLockScreen();
         }
       },
       pause()
@@ -76,6 +93,7 @@ const app = createApp({
         this.started = false;
         this.finished = false;
         this.locked = false;
+        enableLockScreen();
 
         // Reset timer setting
         this.minVal = parseInt(this.minStr);
@@ -105,9 +123,11 @@ const app = createApp({
                 this.minVal = 0;
                 this.secVal = 0;
                 this.playMode = false;
+                enableLockScreen();
             } else if (this.secVal === 0 && this.minVal === 0) {
                 this.playMode = false;
                 this.finished = true;
+                enableLockScreen();
             } else {
                 if (this.secVal === 0) {
                     this.secVal = 59;
@@ -119,6 +139,7 @@ const app = createApp({
                         this.playMode = false;
                         this.finished = true;
                         this.locked = false;
+                        enableLockScreen();
                         // Chime sound: MaouDamashii https://maou.audio/
                         chimeSound.play();
                     }
