@@ -191,7 +191,7 @@
 .timer-face {
     font-size: 14cqw;
     font-weight: bold;
-    color: #283149;
+    /* color: #283149; */
 }
 </style>
 
