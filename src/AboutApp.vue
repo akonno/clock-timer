@@ -1,16 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About | Clock and Timer</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-    <link rel ="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@900&display=swap" rel="stylesheet">
-</head>
-<body>
+<template>
+<div class="app">
     <section class="hero">
         <div class="hero-body">
             <h1 class="title">
@@ -45,11 +34,10 @@
     <footer class="footer">
         <div class="content has-text-centered">
             <p>
-                <a href="https://github.com/akonno/clock-timer"><strong>Clock &amp; Timer</strong></a> by KONNO Akihisa</a>
+                <a href="https://github.com/akonno/clock-timer"><strong>Clock &amp; Timer</strong></a> by KONNO Akihisa
             </p>
         </div>
     </footer>
 </div>
 
-</body>
-</html>
+</template>
