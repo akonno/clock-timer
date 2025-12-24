@@ -107,12 +107,19 @@
     /* border: 1cqw solid #00818a;
     border-radius: 50%;
     */
-    background-image: url('./assets/img/clock-face.png');
     background-position: center;
     background-size: contain;
     margin: 0 auto;
     position: relative;
     font-family: 'Lato', Arial, Helvetica, sans-serif;
+
+    background-image: url('./assets/img/clock-face-black.png');
+  }
+
+@media (prefers-color-scheme: dark) {
+    .clock-dial {
+        background-image: url('./assets/img/clock-face-white.png');
+    }
 }
 
 .point {
