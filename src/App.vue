@@ -412,15 +412,35 @@ function setScreenMode(mode: string) {
 }
 // Timer (Vue)
 
-const chimeSound = new Audio("./assets/sound/maou_se_jingle03.mp3");
-// In some browsers, Audio objects do not load the sound file
-// immediately upon creation but load it only when playback is
-// requested. Therefore, if you are offline when a timer ends,
-// the end sound might not play.
-// However, if you test the sound ("Test Sound") while online,
-// the sound file will be loaded, ensuring the end sound can
-// still play even if you go offline afterwards.
+// Chime sound: MaouDamashii https://maou.audio/
+function preloadAudio(src: string): Promise<HTMLAudioElement> {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio(src);
+    audio.preload = "auto";
 
+    audio.addEventListener("canplaythrough", () => {
+      resolve(audio);
+    }, { once: true });
+
+    audio.addEventListener("error", () => {
+      reject(new Error(`Failed to load audio: ${src}`));
+    }, { once: true });
+
+    audio.load();
+  });
+}
+
+let chimeSound: HTMLAudioElement;
+
+preloadAudio("./assets/sound/maou_se_jingle03.mp3")
+  .then(audio => {
+    chimeSound = audio;
+  })
+  .catch(err => {
+    console.error(err);
+  });
+
+// NoSleep.js to prevent screen lock
 const noSleep = new NoSleep();
 noSleep.disable();
 
@@ -483,10 +503,7 @@ function reset()
   }
   formatTimer();
 }
-function timerChanged()
-{
-    reset();
-}
+
 function tick()
 {
   if (playMode.value === true) {
