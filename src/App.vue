@@ -354,6 +354,8 @@ import { ref, onMounted, watch } from 'vue';
 import NoSleep from "nosleep.js";
 import { useI18n } from 'vue-i18n';
 
+import chimeUrl from "./assets/sound/maou_se_jingle03.mp3";
+
 type TimerMode = "sync" | "accurate";
 
 //----------------------------------------
@@ -609,7 +611,7 @@ function preloadAudio(src: string): Promise<HTMLAudioElement> {
 
 let chimeSound: HTMLAudioElement;
 
-preloadAudio("./assets/sound/maou_se_jingle03.mp3")
+preloadAudio(chimeUrl)
   .then(audio => {
     chimeSound = audio;
   })
