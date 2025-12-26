@@ -1,23 +1,52 @@
 # clock-timer
-Analog clock and digital timer on the same screen
+
+Analog clock and digital timer on the same screen.
+
+Designed for presentations and long tasks where monitoring both  
+the remaining time and the current time is essential.
 
 ## Website
 
 [Clock & Timer](https://akonno.github.io/clock-timer/) (GitHub Pages)
 
-## Why another clock and timer app?
+## Motivation / Design choice
 
-I recognized the necessity for an application that simultaneously displays a clock and a timer, which is particularly useful during tasks involving lengthy durations where monitoring the current time is essential.
+There are countless clock and timer applications available.  
+This app focuses on a specific experience: **the clock’s second hand and the timer countdown moving together**.
 
-Additionally, I find it unsettling when the second hand of the clock and the seconds of the timer are not synchronized, so I prefer that they move in harmony.
+By default, the timer prioritizes visual synchronization with the clock,
+as this consistency is often more comfortable to watch during presentations.
+For users who prefer timing accuracy over synchronization, an alternative mode is provided.
 
-To prevent accidental stops or resets, you may want to disable the timer buttons while the timer is running.
+## Features
 
-Faced with the absence of such a solution, I was motivated to create this app myself.
+- Analog clock and digital timer displayed simultaneously
+- Timer modes:
+  - **Second-hand linked (sync)**: timer ticks in sync with the clock’s second hand
+  - **Accurate**: independent timing prioritizing accuracy
+- Lock option to prevent accidental stop or reset while the timer is running
+- Theme selection: light / dark / system
+- Language selection: English / Japanese
+- Screen lock prevention during timer operation (NoSleep.js)
 
-## The timer is inaccurate
+## Timer accuracy note
 
-The timer in this app is designed to synchronize with the clock's second hand, resulting in a slightly shorter measurement than the specified duration, prioritizing synchronization over precise timing.
+In *Second-hand linked* mode, the timer advances by one second
+each time the clock’s second hand moves.
+Because of this, the countdown follows the clock visually
+rather than measuring exact elapsed time.
+
+Users requiring precise timing should use the *Accurate* mode instead.
+
+## Development
+
+```bash
+npm ci
+npm run dev
+npm run build
+```
+
+Built with Vite and Vue 3.
 
 ## License
 
