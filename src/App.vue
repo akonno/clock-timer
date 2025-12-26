@@ -59,11 +59,11 @@
                         <div class="column is-one-third">
                             <input class="input" type="text" v-bind:disabled="locked" v-model="minStr" maxlength="3" @keypress="isNumber($event)" @change="reset">
                         </div>
-                        <div class="column is-narrow"><label class="label">min.</label></div>
+                        <div class="column is-narrow"><label class="label">{{ $t("message.min") }}</label></div>
                         <div class="column is-one-third">
                             <input class="input" type="text" v-bind:disabled="locked" v-model="secStr" maxlength="2" @keypress="isNumber($event)" @change="reset">
                         </div>
-                        <div class="column is-narrow"><label class="label">sec.</label></div>
+                        <div class="column is-narrow"><label class="label">{{ $t("message.sec") }}</label></div>
                     </div>
                 </div>
             </div>
@@ -107,6 +107,24 @@
             <!-- Any other Bulma elements you want -->
             <div class="box">
                 <h2 class="subtitle">{{ $t("message.settings") }}</h2>
+                <div class="field">
+                    <label class="label">
+                        <span class="icon-text">
+                        <span class="icon"><i class="fas fa-stopwatch"></i></span>
+                        <span>{{ $t("message.timermode") }}</span>
+                        </span>
+                    </label>
+                    <div class="control">
+                        <label class="radio">
+                        <input type="radio" name="timerMode" value="sync" v-model="timerMode" />
+                        {{ $t("message.sync") }}
+                        </label>
+                        <label class="radio">
+                        <input type="radio" name="timerMode" value="accurate" v-model="timerMode" />
+                        {{ $t("message.accurate") }}
+                        </label>
+                    </div>
+                </div>
                 <div class="field is-grouped">
                     <label class="label"><span class="icon-text"><span class="icon"><i class="fas fa-desktop"></i></span><span>{{ $t("message.theme") }}</span></span></label>
                     <div class="control">
@@ -336,16 +354,141 @@ import { ref, onMounted, watch } from 'vue';
 import NoSleep from "nosleep.js";
 import { useI18n } from 'vue-i18n';
 
-const { locale } = useI18n();
+type TimerMode = "sync" | "accurate";
 
+//----------------------------------------
+// Theme initializations
+// 初期設定：localStorageから取得したテーマを使い、即座に`data-theme`に反映させる
+const initialTheme = localStorage.getItem('theme') || 'system';
+document.documentElement.setAttribute('data-theme', initialTheme); // 初期テーマを適用
+
+//----------------------------------------
+// UI variables
+// UI state
 const isBurgerActive = ref(false);
 const isSettingsModalActive = ref(false);
 
+// Settings state
+const theme = ref(initialTheme);
+const { locale } = useI18n();
+// デフォルトは同期モード
+const timerMode = ref<TimerMode>(
+  (localStorage.getItem("timerMode") as TimerMode) ?? "sync"
+);
+
+// Timer state
+const playMode = ref(false);
+const started = ref(false);
+const finished = ref(false);
+const locked = ref(false);
+
+const minVal = ref(10);
+const minStr = ref('10');
+const secVal = ref(0);
+const secStr = ref('0');
+const timerStr = ref("10'00''");
+
+// User preferences
 const selectedTheme = ref('system');
 const selectedLocale = ref(locale.value);
 
-function toggleSettingsModal() {
-  isSettingsModalActive.value = !isSettingsModalActive.value;
+//----------------------------------------
+// Functions
+// Timer display and input helper
+function formatTimer()
+{
+  timerStr.value = minVal.value.toString().padStart(2, '0') + "'" + secVal.value.toString().padStart(2, '0') + "''";
+}
+
+function isNumber(evt)
+{
+  // https://stackoverflow.com/questions/39782176/filter-input-text-only-accept-number-and-dot-vue-js
+  // evt = (evt) ? evt : window.event;
+  var charCode = (evt.which) ? evt.which : evt.keyCode;
+  if (48 <= charCode && charCode <= 57) {
+    // '0' - '9'
+    return true;
+  } else {
+    evt.preventDefault();;
+    return false;
+  }
+}
+
+// Timer control functions
+function start() {
+  if (minVal.value !== 0 || secVal.value !== 0) {
+    playMode.value = true;
+    started.value = true;
+    disableLockScreen();
+
+    if (timerMode.value === "accurate") {
+      // 精確モード：独立エンジン起動
+      startAccurateEngineFromCurrentSetting();
+    }
+  }
+}
+
+function pause() {
+  playMode.value = false;
+
+  if (timerMode.value === "accurate") {
+    pauseAccurateEngine();
+  }
+}
+
+function reset() {
+  // どのモードでも止める
+  stopAccurateEngine();
+
+  playMode.value = false;
+  started.value = false;
+  finished.value = false;
+  locked.value = false;
+  enableLockScreen();
+
+  // Reset timer setting（あなたの既存処理そのまま）
+  minVal.value = parseInt(minStr.value);
+  if (isNaN(minVal.value) || minVal.value < 0) minVal.value = 0;
+
+  secVal.value = parseInt(secStr.value);
+  if (isNaN(secVal.value) || secVal.value < 0) secVal.value = 0;
+
+  formatTimer();
+
+  // 精確モードで resume 用の remainingMs を整合させたいならここで更新
+  remainingMs = (minVal.value * 60 + secVal.value) * 1000;
+}
+
+// Timer engine
+function tickDownOneSecond() {
+  if (playMode.value === true) {
+    if (secVal.value < 0 || minVal.value < 0) {
+      console.error("error: secVal < 0 or minVal < 0");
+      minVal.value = 0;
+      secVal.value = 0;
+      playMode.value = false;
+      enableLockScreen();
+    } else if (secVal.value === 0 && minVal.value === 0) {
+      playMode.value = false;
+      finished.value = true;
+      enableLockScreen();
+    } else {
+      if (secVal.value === 0) {
+        secVal.value = 59;
+        --minVal.value;
+      } else {
+        --secVal.value;
+        if (secVal.value === 0 && minVal.value === 0) {
+          playMode.value = false;
+          finished.value = true;
+          locked.value = false;
+          enableLockScreen();
+          chimeSound.play();
+        }
+      }
+      formatTimer();
+    }
+  }
 }
 
 // Logic for clock
@@ -356,61 +499,95 @@ let secElem: HTMLElement | null = null;
 let minElem: HTMLElement | null = null;
 let hourElem: HTMLElement | null = null;
 
-onMounted(() => {
-    if (secElem === null) {
-        try {
-            secElem = document.getElementById("second-hand");
-            minElem = document.getElementById("minute-hand");
-            hourElem = document.getElementById("hour-hand");
-        } catch (e) {
-            console.error("Error: cannot get second-hand element: ", e);
-            return;
-        }
-    }
+let accurateIntervalId: number | null = null;
+let endAtMs = 0;        // performance.now() 基準
+let remainingMs = 0;    // pause 時に保持
+let hasBeeped = false;
 
-  setInterval(
-      function() {
-          const d = new Date();
-          const second = d.getSeconds();
-          const minute = d.getMinutes();
-          const hour = d.getHours();
-          if (prevSecond != second) {
-              const minuteDeg = minute * 6 + second / 10;
-              secElem.style.transform = "rotate(" + 6 * second + "deg)"
-              minElem.style.transform = "rotate(" + minuteDeg + "deg)"
-              prevSecond = second;
-              // Let timer app know the event.
-              tick();
-              if (prevMinute != minute) {
-                  const hourDeg = hour * 30 + minute / 2;
-                  hourElem.style.transform = "rotate(" + hourDeg + "deg)"
-                  prevMinute = minute;
-              }
-          }
-      }, 100
-  );
-    // Initialize timer values
-    reset();
-});
-
-// 初期設定：localStorageから取得したテーマを使い、即座に`data-theme`に反映させる
-const initialTheme = localStorage.getItem('theme') || 'system';
-document.documentElement.setAttribute('data-theme', initialTheme); // 初期テーマを適用
-const theme = ref(initialTheme);
-
-// Watches
-// テーマが変わるたびに`data-theme`属性を更新する
-watch(theme, (newTheme: string) => {
-    document.documentElement.setAttribute('data-theme', newTheme);
-});
-
-function setScreenMode(mode: string) {
-    if (mode === 'light' || mode === 'dark' || mode === 'system') {
-        theme.value = mode;
-        localStorage.setItem('theme', mode);
-    }
+function stopAccurateEngine() {
+  if (accurateIntervalId != null) {
+    clearInterval(accurateIntervalId);
+    accurateIntervalId = null;
+  }
 }
-// Timer (Vue)
+
+function syncDisplayFromRemainingMs(ms: number) {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000)); // 表示は秒単位
+  minVal.value = Math.floor(totalSec / 60);
+  secVal.value = totalSec % 60;
+  formatTimer();
+}
+
+function startAccurateEngineFromCurrentSetting() {
+  // 現在の minVal/secVal を「残り秒」として取り込む
+  remainingMs = (minVal.value * 60 + secVal.value) * 1000;
+  endAtMs = performance.now() + remainingMs;
+  hasBeeped = false;
+
+  stopAccurateEngine();
+
+  // 表示更新は軽めでOK（200ms程度）
+  accurateIntervalId = window.setInterval(() => {
+    const now = performance.now();
+    const msLeft = endAtMs - now;
+
+    if (msLeft <= 0) {
+      syncDisplayFromRemainingMs(0);
+
+      if (!hasBeeped) {
+        hasBeeped = true;
+        playMode.value = false;
+        finished.value = true;
+        locked.value = false;
+        enableLockScreen();
+        chimeSound.play();
+      }
+      stopAccurateEngine();
+      return;
+    }
+
+    syncDisplayFromRemainingMs(msLeft);
+  }, 200);
+}
+
+function pauseAccurateEngine() {
+  // 残り時間を固定して止める
+  remainingMs = Math.max(0, endAtMs - performance.now());
+  stopAccurateEngine();
+}
+
+function resumeAccurateEngine() {
+  endAtMs = performance.now() + remainingMs;
+  hasBeeped = false;
+  stopAccurateEngine();
+
+  accurateIntervalId = window.setInterval(() => {
+    const now = performance.now();
+    const msLeft = endAtMs - now;
+
+    if (msLeft <= 0) {
+      syncDisplayFromRemainingMs(0);
+
+      if (!hasBeeped) {
+        hasBeeped = true;
+        playMode.value = false;
+        finished.value = true;
+        locked.value = false;
+        enableLockScreen();
+        chimeSound.play();
+      }
+      stopAccurateEngine();
+      return;
+    }
+
+    syncDisplayFromRemainingMs(msLeft);
+  }, 200);
+}
+
+// Settings modal toggle
+function toggleSettingsModal() {
+  isSettingsModalActive.value = !isSettingsModalActive.value;
+}
 
 // Chime sound: MaouDamashii https://maou.audio/
 function preloadAudio(src: string): Promise<HTMLAudioElement> {
@@ -457,107 +634,80 @@ function enableLockScreen() {
   noSleep.disable();
 }
 
-const playMode = ref(false);
-const hourVal = ref(0);
-const minVal = ref(10);
-const minStr = ref('10');
-const secVal = ref(0);
-const secStr = ref('0');
-const timerStr = ref("10'00''");
-const started = ref(false);
-const finished = ref(false);
-const locked = ref(false);
-
-function start()
-{
-  if (minVal.value !== 0 || secVal.value !== 0) {
-      playMode.value = true;
-      started.value = true;
-      disableLockScreen();
-  }
-}
-function pause()
-{
-    playMode.value = false;
-}
-function reset()
-{
-  playMode.value = false;
-  started.value = false;
-  finished.value = false;
-  locked.value = false;
-  enableLockScreen();
-
-  // Reset timer setting
-  minVal.value = parseInt(minStr.value);
-  if (isNaN(minVal.value) || minVal.value < 0) {
-      minVal.value = 0;
-  }
-  secVal.value = parseInt(secStr.value);
-  if (isNaN(secVal.value) || secVal.value < 0) {
-      secVal.value = 0;
-  }
-  if (secVal.value > 60) {
-      minVal.value += Math.floor(secVal.value / 60);
-      secVal.value = secVal.value % 60;
-  }
-  formatTimer();
-}
-
-function tick()
-{
-  if (playMode.value === true) {
-      if (secVal.value < 0 || minVal.value < 0) {
-          // error
-          console.error('error: secVal < 0 or minVal < 0');
-          minVal.value = 0;
-          secVal.value = 0;
-          playMode.value = false;
-          enableLockScreen();
-      } else if (secVal.value === 0 && minVal.value === 0) {
-          playMode.value = false;
-          finished.value = true;
-          enableLockScreen();
-      } else {
-          if (secVal.value === 0) {
-              secVal.value = 59;
-              --minVal.value;
-          } else {
-              --secVal.value;
-              if (secVal.value === 0 && minVal.value === 0) {
-                  // timer finished!
-                  playMode.value = false;
-                  finished.value = true;
-                  locked.value = false;
-                  enableLockScreen();
-                  // Chime sound: MaouDamashii https://maou.audio/
-                  chimeSound.play();
-              }
-          }
-          formatTimer();
-      }
-  }
-}
-function formatTimer()
-{
-  timerStr.value = minVal.value.toString().padStart(2, '0') + "'" + secVal.value.toString().padStart(2, '0') + "''";
-}
-function isNumber(evt)
-{
-  // https://stackoverflow.com/questions/39782176/filter-input-text-only-accept-number-and-dot-vue-js
-  // evt = (evt) ? evt : window.event;
-  var charCode = (evt.which) ? evt.which : evt.keyCode;
-  if (48 <= charCode && charCode <= 57) {
-    // '0' - '9'
-    return true;
-  } else {
-    evt.preventDefault();;
-    return false;
-  }
-}
 function beep()
 {
   // Chime sound: MaouDamashii https://maou.audio/
   chimeSound.play();
 }
+
+// Clock logic initialization
+onMounted(() => {
+    if (secElem === null) {
+        try {
+            secElem = document.getElementById("second-hand");
+            minElem = document.getElementById("minute-hand");
+            hourElem = document.getElementById("hour-hand");
+        } catch (e) {
+            console.error("Error: cannot get second-hand element: ", e);
+            return;
+        }
+    }
+
+  setInterval(
+      function() {
+          const d = new Date();
+          const second = d.getSeconds();
+          const minute = d.getMinutes();
+          const hour = d.getHours();
+          if (prevSecond != second) {
+              const minuteDeg = minute * 6 + second / 10;
+              secElem.style.transform = "rotate(" + 6 * second + "deg)"
+              minElem.style.transform = "rotate(" + minuteDeg + "deg)"
+              prevSecond = second;
+              // Let timer app know the event.
+              if (timerMode.value === "sync") {
+                tickDownOneSecond();
+              }
+              if (prevMinute != minute) {
+                  const hourDeg = hour * 30 + minute / 2;
+                  hourElem.style.transform = "rotate(" + hourDeg + "deg)"
+                  prevMinute = minute;
+              }
+          }
+      }, 100
+  );
+    // Initialize timer values
+    reset();
+});
+
+// Watches
+// テーマが変わるたびに`data-theme`属性を更新する
+watch(theme, (newTheme: string) => {
+    document.documentElement.setAttribute('data-theme', newTheme);
+});
+
+function setScreenMode(mode: string) {
+    if (mode === 'light' || mode === 'dark' || mode === 'system') {
+        theme.value = mode;
+        localStorage.setItem('theme', mode);
+    }
+}
+
+watch(timerMode, (m) => {
+    localStorage.setItem("timerMode", m);
+
+      // 実行中なら “いまの表示値” を引き継いでエンジンを切り替える
+  if (playMode.value) {
+    if (m === "accurate") {
+      startAccurateEngineFromCurrentSetting();
+    } else {
+      // syncへ：精確エンジン停止（以後はclock秒で tickDownOneSecond される）
+      stopAccurateEngine();
+    }
+  } else {
+    // 停止中は精確エンジンだけ止めておけばOK
+    stopAccurateEngine();
+  }
+});
+
 </script>
